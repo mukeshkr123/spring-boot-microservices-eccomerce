@@ -1,5 +1,6 @@
 package com.mukesh.micro.order_service.service;
 
+import com.mukesh.micro.order_service.client.InventoryClient;
 import com.mukesh.micro.order_service.dto.OrderRequest;
 import com.mukesh.micro.order_service.model.Order;
 import com.mukesh.micro.order_service.repository.OrderRepository;
@@ -14,18 +15,27 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class OrderService {
 
-    private final OrderRepository orderRepository;
+private final OrderRepository orderRepository;
+private final InventoryClient inventoryClient;
 
-    public Order placeOrder(OrderRequest orderRequest){
-        Order order = new Order();
-        order.setOrderNumber(UUID.randomUUID().toString());
-        order.setPrice(orderRequest.price());
-        order.setOrderNumber(orderRequest.orderNumber());
-        order.setQuantity(orderRequest.quantity());
-        order.setSkuCode(orderRequest.skuCode());
+public Order placeOrder(OrderRequest orderRequest){
+    Boolean isInStock = inventoryClient.isInStock(orderRequest.skuCode(), orderRequest.quantity());
 
-        return orderRepository.save(order);
+    if(isInStock){
+    Order order = new Order();
+    order.setOrderNumber(UUID.randomUUID().toString());
+    order.setPrice(orderRequest.price());
+    order.setOrderNumber(orderRequest.orderNumber());
+    order.setQuantity(orderRequest.quantity());
+    order.setSkuCode(orderRequest.skuCode());
+
+    return orderRepository.save(order);
+    } else {
+        throw new RuntimeException("Product with skucode" + orderRequest.skuCode() + "is not in stock");
     }
+
+
+}
 
 
 }
