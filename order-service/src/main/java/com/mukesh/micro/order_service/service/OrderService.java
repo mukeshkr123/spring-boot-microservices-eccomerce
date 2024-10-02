@@ -2,11 +2,13 @@ package com.mukesh.micro.order_service.service;
 
 import com.mukesh.micro.order_service.client.InventoryClient;
 import com.mukesh.micro.order_service.dto.OrderRequest;
+import com.mukesh.micro.order_service.event.OrderPlacedEvent;
 import com.mukesh.micro.order_service.model.Order;
 import com.mukesh.micro.order_service.repository.OrderRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.UUID;
@@ -18,6 +20,7 @@ public class OrderService {
 
     private final OrderRepository orderRepository;
     private final InventoryClient inventoryClient;
+    private final KafkaTemplate<String, OrderPlacedEvent> kafkaTemplate;
 
     @Transactional
     public Order placeOrder(OrderRequest orderRequest) {
@@ -29,6 +32,10 @@ public class OrderService {
 
             log.info("Order for SKU: {} is in stock. Saving order with Order Number: {}", orderRequest.skuCode(), order.getOrderNumber());
             Order savedOrder = orderRepository.save(order);
+
+            // Send the message to Kafka Topics
+            OrderPlacedEvent orderPlacedEvent = new OrderPlacedEvent(order.getOrderNumber(), orderRequest.userDetails().email());
+            kafkaTemplate.send("order-placed", orderPlacedEvent);
 
             log.info("Order placed successfully with Order Number: {}", savedOrder.getOrderNumber());
             return savedOrder;
