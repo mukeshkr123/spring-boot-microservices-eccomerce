@@ -27,7 +27,7 @@ public class OrderService {
         log.info("Attempting to place an order for SKU: {}, Quantity: {}", orderRequest.skuCode(), orderRequest.quantity());
 
         // Check if the product is in stock
-        if (isProductInStock(orderRequest.skuCode(), orderRequest.quantity())) {
+        if (!isProductInStock(orderRequest.skuCode(), orderRequest.quantity())) {
             Order order = buildOrder(orderRequest);
 
             log.info("Order for SKU: {} is in stock. Saving order with Order Number: {}", orderRequest.skuCode(), order.getOrderNumber());
